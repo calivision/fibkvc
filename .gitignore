@@ -54,3 +54,5 @@ docs/_build/
 # Internal documentation (not for public repo)
 LAUNCH_CHECKLIST.md
 REPO_STRUCTURE.md
+RELEASE_GUIDE.md
+REDDIT_POST.md
