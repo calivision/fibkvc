@@ -1,0 +1,2 @@
+# Core dependencies - intentionally minimal
+# No external dependencies required for core functionality
