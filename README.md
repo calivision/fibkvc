@@ -15,7 +15,7 @@ Fibonacci KV Cache is an open-source implementation of a novel caching algorithm
 - **Improved memory efficiency** through optimized hash table sizing
 - **Drop-in replacement** for existing KV cache implementations
 
-This is the core algorithm from our research paper: *"Fibonacci Hashing for Efficient KV Cache Management in Large Language Models"* (arXiv:2501.xxxxx)
+This is the core algorithm from our research paper: *"Fibonacci Hashing for Efficient KV Cache Management in Large Language Models"* 
 
 ## Key Features
 
@@ -420,7 +420,7 @@ Contact us at [info@california.vision](mailto:info@california.vision) for:
 
 ## Acknowledgments
 
-- Research supported by [California Vision and Industry Partners]
+- Research supported by California Vision and Industry Partners
 - Built on top of DREAM, LLADA, and vLLM frameworks
 - Inspired by Knuth's work on Fibonacci hashing
 
