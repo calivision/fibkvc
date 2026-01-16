@@ -43,6 +43,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Download all artifacts
       uses: actions/download-artifact@v3
@@ -54,10 +56,48 @@ jobs:
         mkdir -p release-dist
         find all-dist -name "*.whl" -o -name "*.tar.gz" | xargs -I {} cp {} release-dist/
 
+    - name: Generate Release Notes
+      id: release_notes
+      run: |
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        CURRENT_TAG=${{ github.ref_name }}
+        
+        if [ -z "$PREV_TAG" ]; then
+          COMMITS=$(git log --oneline --pretty=format:"- %s" $CURRENT_TAG)
+        else
+          COMMITS=$(git log --oneline --pretty=format:"- %s" $PREV_TAG..$CURRENT_TAG)
+        fi
+        
+        RELEASE_NOTES="## Changes
+        
+$COMMITS
+
+## Downloads
+
+Pre-built wheels are available below for Python 3.8-3.11 on all platforms.
+
+### Installation
+
+\`\`\`bash
+pip install fibkvc
+\`\`\`
+
+Or download a wheel directly and install:
+
+\`\`\`bash
+pip install fibkvc-*.whl
+\`\`\`"
+        
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        echo "$RELEASE_NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: release-dist/*
+        body: ${{ env.RELEASE_NOTES }}
         draft: false
         prerelease: false
       env:
