@@ -28,6 +28,9 @@ dev_requirements = [
     "isort>=5.10.0",
 ]
 
+# 3D lattice features (uses only Python standard library)
+lattice_3d_requirements = []
+
 setup(
     name="fibkvc",
     version=version,
@@ -64,6 +67,7 @@ setup(
     python_requires=">=3.8",
     install_requires=requirements,
     extras_require={
+        "3d": lattice_3d_requirements,
         "dev": dev_requirements,
     },
     keywords="fibonacci hashing kv-cache llm diffusion-models optimization performance",

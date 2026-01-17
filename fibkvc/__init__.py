@@ -55,3 +55,7 @@ __all__ = [
     "get_global_config",
     "set_global_config",
 ]
+
+# 3D lattice features are opt-in via explicit import:
+# from fibkvc.lattice import FibonacciLatticeCache, fibonacci_hash_3d
+# This maintains backward compatibility with existing code
