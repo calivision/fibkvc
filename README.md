@@ -36,6 +36,12 @@ Install from PyPI:
 pip install fibkvc
 ```
 
+For 3D lattice extension (optional):
+
+```bash
+pip install fibkvc[3d]
+```
+
 Or install from source:
 
 ```bash
@@ -44,7 +50,7 @@ cd fibkvc
 pip install -e .
 ```
 
-### Basic Usage
+### Basic Usage (1D Cache)
 
 ```python
 from fibkvc import FibonacciCacheOptimizer
@@ -65,6 +71,29 @@ restored_state = optimizer.deserialize_cache_state(json_str)
 # Get hash index for token position
 hash_idx = optimizer.get_hash_index(token_position=42)
 print(f"Token 42 maps to hash index: {hash_idx}")
+```
+
+### 3D Lattice Cache Usage
+
+```python
+from fibkvc.lattice import FibonacciLatticeCache
+
+# Create a 3D spatial cache
+cache = FibonacciLatticeCache(
+    dimensions=(100, 100, 100),  # 100x100x100 lattice
+    use_octree=True  # Enable spatial indexing
+)
+
+# Store values at 3D coordinates
+cache.set((10, 20, 30), "point_A")
+cache.set((50, 50, 50), "center")
+
+# Retrieve values
+value = cache.get((10, 20, 30))  # Returns "point_A"
+
+# Spatial range queries
+results = cache.get_range(center=(50, 50, 50), radius=20.0)
+print(f"Found {len(results)} points within radius 20")
 ```
 
 ## How It Works
@@ -308,16 +337,123 @@ optimizer.save_to_file(cache_state, "cache_snapshot.json")
 restored_state = optimizer.load_from_file("cache_snapshot.json")
 ```
 
+## 3D Lattice Extension
+
+The 3D lattice extension provides spatial hashing capabilities for caching values indexed by 3D coordinates. This is particularly useful for:
+
+- **Diffusion models** with spatial latent representations
+- **3D graphics** and rendering applications
+- **Spatial simulations** and scientific computing
+- **Multi-resolution processing** with hierarchical caching
+
+### Features
+
+- **3D Fibonacci Hashing** - Uses plastic constant (φ₃ ≈ 1.4656) for uniform 3D distribution
+- **Spatial Locality** - Nearby coordinates hash to nearby indices
+- **Range Queries** - Efficient O(log n + k) spatial queries using octree indexing
+- **Multi-Resolution** - Optional hierarchical caching for coarse-to-fine algorithms
+- **Backward Compatible** - Opt-in via separate imports, doesn't affect 1D API
+
+### Installation
+
+```bash
+pip install fibkvc[3d]
+```
+
+### 3D API Reference
+
+#### `FibonacciLatticeCache`
+
+Main class for 3D spatial caching.
+
+```python
+from fibkvc.lattice import FibonacciLatticeCache
+
+cache = FibonacciLatticeCache(
+    dimensions=(width, height, depth),
+    initial_size=1024,
+    max_load_factor=0.75,
+    use_octree=True  # Enable spatial indexing
+)
+
+# Store and retrieve
+cache.set((x, y, z), value)
+value = cache.get((x, y, z))
+
+# Range queries (requires use_octree=True)
+results = cache.get_range(center=(x, y, z), radius=r)
+# Returns: List[(coords, value)] within radius
+
+# Statistics
+stats = cache.get_statistics()
+```
+
+#### `fibonacci_hash_3d(x, y, z, table_size)`
+
+Core 3D hashing function using the plastic constant.
+
+```python
+from fibkvc.lattice import fibonacci_hash_3d
+
+# Hash 3D coordinates
+hash_idx = fibonacci_hash_3d(x=10, y=20, z=30, table_size=256)
+```
+
+#### `HierarchicalLatticeCache`
+
+Multi-resolution cache for coarse-to-fine algorithms.
+
+```python
+from fibkvc.lattice import HierarchicalLatticeCache
+
+# Create hierarchical cache with 3 levels
+cache = HierarchicalLatticeCache(
+    dimensions=(128, 128, 128),
+    num_levels=3  # Full, half, quarter resolution
+)
+
+# Store at different resolution levels
+cache.set((64, 64, 64), "fine_detail", level=0)    # Full resolution
+cache.set((64, 64, 64), "coarse_detail", level=2)  # Quarter resolution
+
+# Retrieve from specific level
+value = cache.get_hierarchical((64, 64, 64), level=1)
+```
+
+### 3D Examples
+
+Check out the [examples/](./examples/) directory for complete 3D examples:
+
+- `basic_3d_cache.py` - Basic 3D cache usage and hash function
+- `range_queries_example.py` - Spatial range queries with octree
+- `hierarchical_cache_example.py` - Multi-resolution caching
+
+### 3D Performance
+
+The 3D extension maintains the same performance characteristics:
+
+- **Hash computation**: O(1), <100ns per hash
+- **Insert/Get**: O(1) average case
+- **Range queries**: O(log n + k) where k is result size
+- **Collision rate**: <5% for uniform random coordinates
+- **Distribution**: Uniform (chi-square p-value > 0.05)
+
 ## Examples
 
 Check out the [examples/](./examples/) directory for complete integration examples:
 
+**1D Cache:**
 - `basic_usage.py` - Simple cache optimization
 - `dream_integration.py` - DREAM model integration
 - `llada_integration.py` - LLADA model integration
 - `vllm_integration.py` - vLLM integration
 - `monitoring.py` - Advanced monitoring setup
 - `benchmarking.py` - Performance benchmarking
+
+**3D Lattice Cache:**
+- `basic_3d_cache.py` - Basic 3D cache usage
+- `range_queries_example.py` - Spatial range queries
+- `hierarchical_cache_example.py` - Multi-resolution caching
 
 ## Testing
 
@@ -327,14 +463,21 @@ Run the test suite:
 # Install dev dependencies
 pip install -e ".[dev]"
 
-# Run all tests
+# Run all tests (1D and 3D)
 pytest
 
+# Run only 1D tests
+pytest tests/test_*.py
+
+# Run only 3D tests
+pytest tests/lattice/
+
 # Run with coverage
-pytest --cov=fibonacci_kv_cache --cov-report=html
+pytest --cov=fibkvc --cov-report=html
 
 # Run property-based tests (100 iterations each)
 pytest tests/test_fibonacci_hash_properties.py -v
+pytest tests/lattice/test_fibonacci_hash_3d_properties.py -v
 ```
 
 ## Architecture
@@ -342,21 +485,43 @@ pytest tests/test_fibonacci_hash_properties.py -v
 ```
 fibkvc/
 ├── fibkvc/
-│   ├── __init__.py           # Public API exports
-│   ├── fibonacci_hash.py     # Core hashing algorithm
-│   ├── fibonacci_cache.py    # Cache optimizer
-│   └── fibonacci_config.py   # Configuration & monitoring
+│   ├── __init__.py           # Public API exports (1D)
+│   ├── fibonacci_hash.py     # Core 1D hashing algorithm
+│   ├── fibonacci_cache.py    # 1D cache optimizer
+│   ├── fibonacci_config.py   # Configuration & monitoring
+│   └── lattice/              # 3D extension (optional)
+│       ├── __init__.py       # 3D API exports
+│       ├── fibonacci_hash_3d.py  # 3D hashing with plastic constant
+│       ├── lattice_cache.py  # FibonacciLatticeCache class
+│       ├── octree.py         # Octree spatial indexing
+│       └── hierarchy.py      # Multi-resolution support
 ├── tests/
-│   ├── test_fibonacci_hash.py           # Unit tests
-│   ├── test_fibonacci_cache.py          # Cache tests
-│   └── test_fibonacci_hash_properties.py # Property-based tests
+│   ├── test_fibonacci_hash.py           # 1D unit tests
+│   ├── test_fibonacci_cache.py          # 1D cache tests
+│   ├── test_fibonacci_hash_properties.py # 1D property tests
+│   └── lattice/                         # 3D tests
+│       ├── test_fibonacci_hash_3d.py
+│       ├── test_fibonacci_hash_3d_properties.py
+│       ├── test_lattice_cache.py
+│       ├── test_lattice_cache_properties.py
+│       ├── test_octree.py
+│       ├── test_octree_properties.py
+│       ├── test_hierarchy.py
+│       └── test_backward_compatibility.py
 ├── examples/
-│   ├── basic_usage.py
+│   ├── basic_usage.py        # 1D examples
 │   ├── dream_integration.py
 │   ├── llada_integration.py
-│   └── vllm_integration.py
+│   ├── vllm_integration.py
+│   ├── monitoring.py
+│   ├── basic_3d_cache.py     # 3D examples
+│   ├── range_queries_example.py
+│   └── hierarchical_cache_example.py
 ├── benchmarks/
-│   └── fibonacci_benchmark.py
+│   ├── fibonacci_benchmark.py        # 1D benchmarks
+│   ├── bench_hash_distribution.py    # 3D hash benchmarks
+│   ├── bench_cache_performance.py    # 3D cache benchmarks
+│   └── bench_range_queries.py        # 3D range query benchmarks
 └── docs/
     ├── ALGORITHM.md          # Detailed algorithm explanation
     ├── BENCHMARKS.md         # Performance analysis
