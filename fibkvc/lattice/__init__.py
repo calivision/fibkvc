@@ -32,8 +32,8 @@ Usage:
 
 # Note: Imports will be added as components are implemented
 from .fibonacci_hash_3d import fibonacci_hash_3d, PHI_3, PHI_1, PHI_2
-# from .lattice_cache import FibonacciLatticeCache
-# from .octree import Octree, OctreeNode
+from .lattice_cache import FibonacciLatticeCache
+from .octree import Octree, OctreeNode
 
 __all__ = [
     # Will be populated as components are implemented
@@ -41,14 +41,14 @@ __all__ = [
     "PHI_3",
     "PHI_1",
     "PHI_2",
-    # "FibonacciLatticeCache",
-    # "Octree",
-    # "OctreeNode",
+    "FibonacciLatticeCache",
+    "Octree",
+    "OctreeNode",
 ]
 
-# Optional hierarchy support will be added later
-# try:
-#     from .hierarchy import HierarchicalLatticeCache
-#     __all__.append("HierarchicalLatticeCache")
-# except ImportError:
-#     pass
+# Optional hierarchy support
+try:
+    from .hierarchy import HierarchicalLatticeCache
+    __all__.append("HierarchicalLatticeCache")
+except ImportError:
+    pass
