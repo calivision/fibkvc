@@ -398,7 +398,6 @@ If you use this work in your research, please cite:
 @article{fibonacci-kv-cache-2026,
   title={Fibonacci Hashing for Efficient KV Cache Management in Large Language Models},
   author={David Anderson},
-  journal={arXiv preprint arXiv:2601.xxxxx},
   year={2026}
 }
 ```
